@@ -1,0 +1,3627 @@
+openapi: 3.0.3
+info:
+  title: Be-Quiz-Sys API
+  description: |
+    API Documentation cho hệ thống Quiz/Exam Management System.
+    Hệ thống hỗ trợ quản lý lớp học, đề thi, câu hỏi, kết quả thi, ví điện tử và nhiều tính năng khác.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:5005/api
+    description: Local development server
+  - url: https://api.example.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Xác thực người dùng
+  - name: User
+    description: Quản lý thông tin người dùng
+  - name: Classes
+    description: Quản lý lớp học
+  - name: Exams
+    description: Quản lý đề thi
+  - name: Questions
+    description: Quản lý câu hỏi
+  - name: Question Answers
+    description: Quản lý đáp án
+  - name: Exam Favorites
+    description: Quản lý đề thi yêu thích
+  - name: Exam Comments
+    description: Quản lý bình luận đề thi
+  - name: Exam Ratings
+    description: Quản lý đánh giá đề thi
+  - name: Exam Sessions
+    description: Quản lý phiên làm bài thi
+  - name: Student Answers
+    description: Quản lý câu trả lời của học sinh
+  - name: Exam Results
+    description: Quản lý kết quả thi
+  - name: Student Exam Status
+    description: Trạng thái thi của học sinh
+  - name: Exam Purchase
+    description: Mua đề thi
+  - name: Exam Monitor
+    description: Giám sát gian lận trong thi
+  - name: Notifications
+    description: Quản lý thông báo
+  - name: Posts
+    description: Quản lý bài đăng trong lớp
+  - name: Upload
+    description: Upload file
+  - name: Wallet
+    description: Quản lý ví điện tử
+  - name: Teacher Dashboard
+    description: Dashboard giáo viên
+  - name: Admin
+    description: Quản trị hệ thống
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token được lấy từ API signin
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, teacher, admin, superadmin]
+        balance:
+          type: number
+          format: decimal
+        avatar_url:
+          type: string
+          nullable: true
+        last_login:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SignupRequest:
+      type: object
+      required:
+        - fullName
+        - email
+        - password
+        - role
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+          enum: [student, teacher, admin, superadmin]
+
+    SigninRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    SigninResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        accessToken:
+          type: string
+
+    Class:
+      type: object
+      properties:
+        id:
+          type: integer
+        className:
+          type: string
+        classCode:
+          type: string
+        teacher_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    Exam:
+      type: object
+      properties:
+        id:
+          type: integer
+        class_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        des:
+          type: string
+        total_score:
+          type: integer
+        minutes:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        is_paid:
+          type: boolean
+        fee:
+          type: number
+          format: decimal
+        is_public:
+          type: boolean
+        count:
+          type: integer
+        question_creation_method:
+          type: string
+          enum: [text, editor]
+        image_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        exam_id:
+          type: integer
+        question_text:
+          type: string
+        question_order:
+          type: integer
+        score:
+          type: number
+          format: decimal
+        question_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    QuestionAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+        question_id:
+          type: integer
+        answer_text:
+          type: string
+        is_correct:
+          type: boolean
+        answer_order:
+          type: integer
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Đăng ký tài khoản mới
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Thiếu thông tin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: Đăng nhập
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SigninResponse'
+        '400':
+          description: Thiếu thông tin
+        '401':
+          description: Sai mật khẩu
+        '404':
+          description: Không tìm thấy email
+
+  /user/profile:
+    get:
+      tags:
+        - User
+      summary: Lấy thông tin profile
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Không tìm thấy user
+    post:
+      tags:
+        - User
+      summary: Cập nhật thông tin profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                avatar_url:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '400':
+          description: Thiếu thông tin
+        '404':
+          description: Không tìm thấy user
+
+  /user/changepassword:
+    post:
+      tags:
+        - User
+      summary: Đổi mật khẩu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Đổi mật khẩu thành công
+        '403':
+          description: Mật khẩu hiện tại không đúng
+
+  /classes:
+    post:
+      tags:
+        - Classes
+      summary: Tạo lớp học mới (Teacher only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - className
+              properties:
+                className:
+                  type: string
+      responses:
+        '201':
+          description: Tạo lớp thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Class'
+        '400':
+          description: Thiếu thông tin
+    get:
+      tags:
+        - Classes
+      summary: Lấy danh sách lớp học
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Class'
+                  total:
+                    type: integer
+                  pagination:
+                    type: object
+
+  /classes/{id}:
+    put:
+      tags:
+        - Classes
+      summary: Cập nhật lớp học (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - className
+              properties:
+                className:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '404':
+          description: Không tìm thấy lớp hoặc không có quyền
+
+  /classes/join:
+    get:
+      tags:
+        - Classes
+      summary: Tham gia lớp học bằng mã code (Student only)
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tham gia thành công
+        '400':
+          description: Đã tham gia hoặc bị cấm
+        '404':
+          description: Không tìm thấy lớp
+
+  /classes/students:
+    get:
+      tags:
+        - Classes
+      summary: Lấy danh sách học sinh trong lớp
+      parameters:
+        - name: class
+          in: query
+          schema:
+            type: string
+        - name: classCode
+          in: query
+          schema:
+            type: string
+        - name: class_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Thiếu thông tin
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy lớp
+
+  /classes/student/ban:
+    post:
+      tags:
+        - Classes
+      summary: Cấm/Bỏ cấm học sinh (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - classId
+                - student_id
+                - is_banned
+              properties:
+                classId:
+                  type: integer
+                class_id:
+                  type: integer
+                student_id:
+                  type: integer
+                is_banned:
+                  type: boolean
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Thiếu thông tin hoặc dữ liệu không hợp lệ
+        '404':
+          description: Không tìm thấy học sinh trong lớp
+
+  /classes:
+    delete:
+      tags:
+        - Classes
+      summary: Xóa lớp học (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - classId
+              properties:
+                classId:
+                  type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy lớp
+
+  /exams:
+    post:
+      tags:
+        - Exams
+      summary: Tạo đề thi mới (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - minutes
+              properties:
+                class_id:
+                  type: integer
+                  nullable: true
+                title:
+                  type: string
+                des:
+                  type: string
+                total_score:
+                  type: integer
+                  default: 100
+                minutes:
+                  type: integer
+                start_time:
+                  type: string
+                  format: date-time
+                end_time:
+                  type: string
+                  format: date-time
+                is_paid:
+                  type: boolean
+                  default: false
+                fee:
+                  type: number
+                  format: decimal
+                is_public:
+                  type: boolean
+                  default: false
+                question_creation_method:
+                  type: string
+                  enum: [text, editor]
+                image_url:
+                  type: string
+      responses:
+        '201':
+          description: Tạo đề thi thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exam'
+        '400':
+          description: Thiếu thông tin hoặc dữ liệu không hợp lệ
+        '404':
+          description: Không tìm thấy lớp
+    get:
+      tags:
+        - Exams
+      summary: Lấy danh sách đề thi
+      parameters:
+        - name: class_id
+          in: query
+          schema:
+            type: integer
+        - name: is_public
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Exam'
+
+  /exams/{id}:
+    get:
+      tags:
+        - Exams
+      summary: Lấy thông tin đề thi theo ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exam'
+        '404':
+          description: Không tìm thấy đề thi
+    put:
+      tags:
+        - Exams
+      summary: Cập nhật đề thi (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                des:
+                  type: string
+                total_score:
+                  type: integer
+                minutes:
+                  type: integer
+                start_time:
+                  type: string
+                  format: date-time
+                end_time:
+                  type: string
+                  format: date-time
+                is_paid:
+                  type: boolean
+                fee:
+                  type: number
+                  format: decimal
+                is_public:
+                  type: boolean
+                image_url:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy đề thi
+    delete:
+      tags:
+        - Exams
+      summary: Xóa đề thi (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy đề thi
+
+  /exams/{id}/similar:
+    get:
+      tags:
+        - Exams
+      summary: Lấy danh sách đề thi tương tự
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  similarExams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Exam'
+
+  /exams/{id}/switch-question-method:
+    post:
+      tags:
+        - Exams
+      summary: Chuyển đổi phương thức tạo câu hỏi (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question_creation_method
+              properties:
+                question_creation_method:
+                  type: string
+                  enum: [text, editor]
+      responses:
+        '200':
+          description: Chuyển đổi thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy đề thi
+
+  /questions:
+    post:
+      tags:
+        - Questions
+      summary: Tạo câu hỏi mới (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exam_id
+                - question_text
+                - score
+              properties:
+                exam_id:
+                  type: integer
+                question_text:
+                  type: string
+                question_order:
+                  type: integer
+                score:
+                  type: number
+                  format: decimal
+                question_type:
+                  type: string
+      responses:
+        '201':
+          description: Tạo câu hỏi thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          description: Thiếu thông tin
+    get:
+      tags:
+        - Questions
+      summary: Lấy danh sách câu hỏi (Teacher only)
+      parameters:
+        - name: exam_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Question'
+
+  /questions/{id}:
+    get:
+      tags:
+        - Questions
+      summary: Lấy thông tin câu hỏi theo ID (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+    put:
+      tags:
+        - Questions
+      summary: Cập nhật câu hỏi (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question_text:
+                  type: string
+                question_order:
+                  type: integer
+                score:
+                  type: number
+                  format: decimal
+                question_type:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy câu hỏi
+    delete:
+      tags:
+        - Questions
+      summary: Xóa câu hỏi (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy câu hỏi
+
+  /exams/{exam_id}/questions/order:
+    put:
+      tags:
+        - Questions
+      summary: Cập nhật thứ tự câu hỏi (Teacher only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - questions
+              properties:
+                questions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - question_order
+                    properties:
+                      id:
+                        type: integer
+                      question_order:
+                        type: integer
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+
+  /question-answers:
+    post:
+      tags:
+        - Question Answers
+      summary: Tạo đáp án mới (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question_id
+                - answer_text
+                - is_correct
+              properties:
+                question_id:
+                  type: integer
+                answer_text:
+                  type: string
+                is_correct:
+                  type: boolean
+                answer_order:
+                  type: integer
+      responses:
+        '201':
+          description: Tạo đáp án thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionAnswer'
+        '400':
+          description: Thiếu thông tin
+    get:
+      tags:
+        - Question Answers
+      summary: Lấy danh sách đáp án (Teacher only)
+      parameters:
+        - name: question_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QuestionAnswer'
+
+  /question-answers/{id}:
+    get:
+      tags:
+        - Question Answers
+      summary: Lấy thông tin đáp án theo ID (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionAnswer'
+    put:
+      tags:
+        - Question Answers
+      summary: Cập nhật đáp án (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer_text:
+                  type: string
+                is_correct:
+                  type: boolean
+                answer_order:
+                  type: integer
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy đáp án
+    delete:
+      tags:
+        - Question Answers
+      summary: Xóa đáp án (Teacher only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy đáp án
+
+  /exam-favorites:
+    post:
+      tags:
+        - Exam Favorites
+      summary: Thêm đề thi vào yêu thích
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exam_id
+              properties:
+                exam_id:
+                  type: integer
+      responses:
+        '201':
+          description: Thêm thành công
+        '400':
+          description: Đã có trong yêu thích
+    get:
+      tags:
+        - Exam Favorites
+      summary: Lấy danh sách đề thi yêu thích
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Exam'
+
+  /exam-favorites/{exam_id}/check:
+    get:
+      tags:
+        - Exam Favorites
+      summary: Kiểm tra đề thi có trong yêu thích không
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isFavorite:
+                    type: boolean
+
+  /exam-favorites/{exam_id}:
+    delete:
+      tags:
+        - Exam Favorites
+      summary: Xóa đề thi khỏi yêu thích
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy
+
+  /exam-comments:
+    post:
+      tags:
+        - Exam Comments
+      summary: Tạo bình luận cho đề thi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exam_id
+                - content
+              properties:
+                exam_id:
+                  type: integer
+                content:
+                  type: string
+                parent_id:
+                  type: integer
+                  nullable: true
+      responses:
+        '201':
+          description: Tạo bình luận thành công
+        '400':
+          description: Thiếu thông tin
+
+  /exams/{exam_id}/comments:
+    get:
+      tags:
+        - Exam Comments
+      summary: Lấy danh sách bình luận của đề thi
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+
+  /exam-comments/{comment_id}:
+    get:
+      tags:
+        - Exam Comments
+      summary: Lấy thông tin bình luận theo ID
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+    put:
+      tags:
+        - Exam Comments
+      summary: Cập nhật bình luận (chỉ chủ sở hữu)
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+    delete:
+      tags:
+        - Exam Comments
+      summary: Xóa bình luận (chỉ chủ sở hữu)
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+
+  /exam-ratings:
+    post:
+      tags:
+        - Exam Ratings
+      summary: Tạo hoặc cập nhật đánh giá đề thi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exam_id
+                - rating
+              properties:
+                exam_id:
+                  type: integer
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+
+  /exams/{exam_id}/rating:
+    get:
+      tags:
+        - Exam Ratings
+      summary: Lấy đánh giá trung bình của đề thi
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security: []
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  average_rating:
+                    type: number
+                  total_ratings:
+                    type: integer
+
+  /exams/{exam_id}/my-rating:
+    get:
+      tags:
+        - Exam Ratings
+      summary: Lấy đánh giá của user hiện tại cho đề thi
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '404':
+          description: Chưa đánh giá
+
+  /exams/{exam_id}/ratings:
+    get:
+      tags:
+        - Exam Ratings
+      summary: Lấy tất cả đánh giá của đề thi (có phân trang)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      security: []
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ratings:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /exams/{exam_id}/rating:
+    delete:
+      tags:
+        - Exam Ratings
+      summary: Xóa đánh giá
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy đánh giá
+
+  /exams/{exam_id}/start:
+    post:
+      tags:
+        - Exam Sessions
+      summary: Bắt đầu làm bài thi (Student only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Bắt đầu thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      exam_id:
+                        type: integer
+                      student_id:
+                        type: integer
+                      start_time:
+                        type: string
+                        format: date-time
+        '400':
+          description: Đã có session đang diễn ra hoặc chưa mua đề thi
+        '404':
+          description: Không tìm thấy đề thi
+
+  /exams/{exam_id}/session:
+    get:
+      tags:
+        - Exam Sessions
+      summary: Lấy session hiện tại của student cho đề thi
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '404':
+          description: Không tìm thấy session
+
+  /exam-sessions/my-sessions:
+    get:
+      tags:
+        - Exam Sessions
+      summary: Lấy tất cả sessions của student
+      parameters:
+        - name: exam_id
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_progress, completed]
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+
+  /sessions/{session_id}/questions:
+    get:
+      tags:
+        - Exam Sessions
+      summary: Lấy đề thi cho session (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      type: object
+        '403':
+          description: Không có quyền truy cập session này
+        '404':
+          description: Không tìm thấy session
+
+  /sessions/{session_id}/answer:
+    post:
+      tags:
+        - Student Answers
+      summary: Trả lời câu hỏi trong session (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question_id
+                - answer_ids
+              properties:
+                question_id:
+                  type: integer
+                answer_ids:
+                  type: array
+                  items:
+                    type: integer
+                answer_text:
+                  type: string
+      responses:
+        '200':
+          description: Lưu câu trả lời thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+        '403':
+          description: Không có quyền
+
+  /sessions/{session_id}/answers:
+    get:
+      tags:
+        - Student Answers
+      summary: Lấy tất cả câu trả lời của session (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answers:
+                    type: array
+
+  /sessions/{session_id}/answers/{question_id}:
+    get:
+      tags:
+        - Student Answers
+      summary: Lấy câu trả lời cụ thể (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '404':
+          description: Không tìm thấy
+
+  /sessions/{session_id}/submit:
+    post:
+      tags:
+        - Exam Results
+      summary: Nộp bài thi (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Nộp bài thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      session_id:
+                        type: integer
+                      score:
+                        type: number
+                        format: decimal
+                      total_score:
+                        type: number
+                        format: decimal
+                      percentage:
+                        type: number
+        '400':
+          description: Đã nộp bài hoặc session không hợp lệ
+
+  /sessions/{session_id}/result:
+    get:
+      tags:
+        - Exam Results
+      summary: Lấy kết quả thi của session (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+        '404':
+          description: Chưa có kết quả
+
+  /exam-results/my-results:
+    get:
+      tags:
+        - Exam Results
+      summary: Lấy tất cả kết quả thi của student
+      parameters:
+        - name: exam_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /exams/{exam_id}/results:
+    get:
+      tags:
+        - Exam Results
+      summary: Lấy tất cả kết quả của đề thi (Teacher only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /exams/{exam_id}/results/export:
+    get:
+      tags:
+        - Exam Results
+      summary: Export kết quả thi (CSV/JSON) (Teacher only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+      responses:
+        '200':
+          description: Thành công
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+
+  /exams/{exam_id}/my-comparison:
+    get:
+      tags:
+        - Exam Results
+      summary: So sánh kết quả của student với lớp và tất cả (Student only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  myResult:
+                    type: object
+                  classAverage:
+                    type: number
+                  overallAverage:
+                    type: number
+                  classRank:
+                    type: integer
+                  overallRank:
+                    type: integer
+
+  /exam-results/{result_id}/feedback:
+    put:
+      tags:
+        - Exam Results
+      summary: Cập nhật feedback cho kết quả thi (Teacher only)
+      parameters:
+        - name: result_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy kết quả
+
+  /student/exams/{exam_id}/status:
+    get:
+      tags:
+        - Student Exam Status
+      summary: Lấy trạng thái của student cho một exam (Student only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [not_started, in_progress, completed]
+                  session_id:
+                    type: integer
+                    nullable: true
+                  result_id:
+                    type: integer
+                    nullable: true
+
+  /student/exams/with-status:
+    get:
+      tags:
+        - Student Exam Status
+      summary: Lấy tất cả exams với trạng thái của student (Student only)
+      parameters:
+        - name: class_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exams:
+                    type: array
+
+  /student/exams/by-status:
+    get:
+      tags:
+        - Student Exam Status
+      summary: Lấy exams theo trạng thái (Student only)
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [not_started, in_progress, completed]
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exams:
+                    type: array
+
+  /exam-purchase/purchase:
+    post:
+      tags:
+        - Exam Purchase
+      summary: Mua đề thi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exam_id
+              properties:
+                exam_id:
+                  type: integer
+      responses:
+        '200':
+          description: Mua thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  purchase:
+                    type: object
+        '400':
+          description: Đã mua hoặc số dư không đủ
+        '404':
+          description: Không tìm thấy đề thi
+
+  /exam-purchase/my-purchases:
+    get:
+      tags:
+        - Exam Purchase
+      summary: Xem danh sách đề thi đã mua
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  purchases:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /exam-purchase/check/{exam_id}:
+    get:
+      tags:
+        - Exam Purchase
+      summary: Kiểm tra trạng thái mua đề thi
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isPurchased:
+                    type: boolean
+                  purchase:
+                    type: object
+                    nullable: true
+
+  /exam-purchase/statistics:
+    get:
+      tags:
+        - Exam Purchase
+      summary: Lấy thống kê về các đề thi đã mua
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPurchases:
+                    type: integer
+                  totalSpent:
+                    type: number
+                    format: decimal
+
+  /sessions/{session_id}/cheating-log:
+    post:
+      tags:
+        - Exam Monitor
+      summary: Ghi log gian lận trong lúc thi (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event_type
+              properties:
+                event_type:
+                  type: string
+                  enum: [tab_switch, copy_paste, window_focus_loss, fullscreen_exit]
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Ghi log thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+
+  /sessions/{session_id}/cheating-logs:
+    get:
+      tags:
+        - Exam Monitor
+      summary: Lấy lịch sử gian lận của một session (Student only)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+
+  /exams/{exam_id}/cheating-logs:
+    get:
+      tags:
+        - Exam Monitor
+      summary: Lấy lịch sử gian lận của một exam (Teacher only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+
+  /exams/{exam_id}/students/{student_id}/cheating-logs:
+    get:
+      tags:
+        - Exam Monitor
+      summary: Lấy lịch sử gian lận của một student trong một exam (Teacher only)
+      parameters:
+        - name: exam_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: student_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+
+  /student/cheating-logs:
+    get:
+      tags:
+        - Exam Monitor
+      summary: Lấy tất cả lịch sử gian lận của một student (Student only)
+      parameters:
+        - name: exam_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Lấy danh sách thông báo (có phân trang)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: is_read
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Lấy số lượng thông báo chưa đọc
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unreadCount:
+                    type: integer
+
+  /notifications/{notification_id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Đánh dấu một thông báo là đã đọc
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '404':
+          description: Không tìm thấy thông báo
+
+  /notifications/read-all:
+    put:
+      tags:
+        - Notifications
+      summary: Đánh dấu tất cả thông báo là đã đọc
+      responses:
+        '200':
+          description: Thành công
+
+  /notifications/{notification_id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Xóa một thông báo
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy thông báo
+
+  /posts/create:
+    post:
+      tags:
+        - Posts
+      summary: Tạo bài đăng trong lớp (Teacher only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - class_id
+                - content
+              properties:
+                class_id:
+                  type: integer
+                content:
+                  type: string
+                title:
+                  type: string
+      responses:
+        '201':
+          description: Tạo bài đăng thành công
+        '400':
+          description: Thiếu thông tin
+
+  /classes/posts/{classId}:
+    get:
+      tags:
+        - Posts
+      summary: Lấy tất cả bài đăng từ một lớp
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+
+  /posts/comment:
+    post:
+      tags:
+        - Posts
+      summary: Tạo bình luận cho bài đăng
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - post_id
+                - content
+              properties:
+                post_id:
+                  type: integer
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Tạo bình luận thành công
+        '400':
+          description: Thiếu thông tin
+
+  /posts/comment/{postId}:
+    get:
+      tags:
+        - Posts
+      summary: Lấy bình luận của một bài đăng
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+
+  /posts/{postId}:
+    delete:
+      tags:
+        - Posts
+      summary: Xóa bài đăng (Teacher only)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy bài đăng
+
+  /posts/update/{postId}:
+    post:
+      tags:
+        - Posts
+      summary: Cập nhật bài đăng (Teacher only)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy bài đăng
+
+  /posts/comment/{commentId}:
+    delete:
+      tags:
+        - Posts
+      summary: Xóa bình luận (Teacher only)
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy bình luận
+
+  /upload/exam-image:
+    post:
+      tags:
+        - Upload
+      summary: Upload ảnh đề thi
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Upload thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  image_url:
+                    type: string
+        '400':
+          description: Thiếu file hoặc file không hợp lệ
+
+  /upload/avatar:
+    post:
+      tags:
+        - Upload
+      summary: Upload avatar user
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - avatar
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Upload thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  avatar_url:
+                    type: string
+        '400':
+          description: Thiếu file hoặc file không hợp lệ
+
+  /wallet/deposit:
+    post:
+      tags:
+        - Wallet
+      summary: Tạo yêu cầu nạp tiền -> tạo deposit pending + trả QR base64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bankName
+                - bankAccountName
+                - bankAccountNumber
+                - amount
+              properties:
+                bankName:
+                  type: string
+                bankAccountName:
+                  type: string
+                bankAccountNumber:
+                  type: string
+                amount:
+                  type: number
+                  format: decimal
+      responses:
+        '200':
+          description: Tạo yêu cầu nạp tiền thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      deposit_id:
+                        type: integer
+                      deposit_code:
+                        type: string
+                      deposit_status:
+                        type: string
+                      amount:
+                        type: number
+                      qr_base64:
+                        type: string
+        '400':
+          description: Thiếu thông tin hoặc dữ liệu không hợp lệ
+
+  /wallet/deposit/webhook:
+    post:
+      tags:
+        - Wallet
+      summary: Webhook từ SePay (không dùng verifyToken)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                gateway:
+                  type: string
+                transactionDate:
+                  type: string
+                accountNumber:
+                  type: string
+                content:
+                  type: string
+                transferType:
+                  type: string
+                transferAmount:
+                  type: number
+      responses:
+        '200':
+          description: Xử lý thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+        '404':
+          description: Không tìm thấy yêu cầu nạp
+
+  /wallet/deposit-history:
+    get:
+      tags:
+        - Wallet
+      summary: Lấy danh sách deposit_history
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, success, failed]
+        - name: user_id
+          in: query
+          description: Chỉ Admin mới có thể filter theo user_id khác
+          schema:
+            type: integer
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+        - name: bankName
+          in: query
+          schema:
+            type: string
+        - name: deposit_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      deposits:
+                        type: array
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+  /wallet/withdraw-history:
+    get:
+      tags:
+        - Wallet
+      summary: Lấy danh sách withdrawn_history
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, success, failed]
+        - name: user_id
+          in: query
+          description: Chỉ Admin mới có thể filter theo user_id khác
+          schema:
+            type: integer
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+        - name: bankName
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      withdraws:
+                        type: array
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+  /wallet/transaction-history:
+    get:
+      tags:
+        - Wallet
+      summary: Lấy danh sách transactions_history
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: transactionType
+          in: query
+          schema:
+            type: string
+            enum: [deposit, withdraw, purchase, adjustment]
+        - name: transactionStatus
+          in: query
+          schema:
+            type: string
+            enum: [pending, success, failed]
+        - name: user_id
+          in: query
+          description: Chỉ Admin mới có thể filter theo user_id khác
+          schema:
+            type: integer
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+        - name: transferType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+  /wallet/admin/add-balance:
+    post:
+      tags:
+        - Wallet
+      summary: Admin cộng tiền cho user (Admin/SuperAdmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - amount
+              properties:
+                user_id:
+                  type: integer
+                amount:
+                  type: number
+                  format: decimal
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Cộng tiền thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                      amount_added:
+                        type: number
+                      before_balance:
+                        type: number
+                      after_balance:
+                        type: number
+        '400':
+          description: Thiếu thông tin hoặc dữ liệu không hợp lệ
+        '404':
+          description: Không tìm thấy người dùng
+
+  /teacher/dashboard/stats:
+    get:
+      tags:
+        - Teacher Dashboard
+      summary: Lấy thống kê dashboard giáo viên (Teacher only)
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalExams:
+                    type: integer
+                  totalStudents:
+                    type: integer
+                  totalRevenue:
+                    type: number
+                    format: decimal
+                  recentExams:
+                    type: array
+
+  /teacher/exam-purchases:
+    get:
+      tags:
+        - Teacher Dashboard
+      summary: Lấy danh sách mua đề thi của giáo viên (Teacher only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  purchases:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /teacher/exam-revenue:
+    get:
+      tags:
+        - Teacher Dashboard
+      summary: Lấy thống kê doanh thu đề thi (Teacher only)
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRevenue:
+                    type: number
+                    format: decimal
+                  revenueByExam:
+                    type: array
+
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Lấy thống kê dashboard admin (Admin/SuperAdmin only)
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                  totalExams:
+                    type: integer
+                  totalClasses:
+                    type: integer
+                  totalRevenue:
+                    type: number
+                    format: decimal
+
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả users (SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [student, teacher, admin, superadmin]
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    post:
+      tags:
+        - Admin
+      summary: Tạo user mới (SuperAdmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: Tạo user thành công
+        '400':
+          description: Thiếu thông tin
+
+  /admin/users/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Lấy thông tin user theo ID (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Không tìm thấy user
+    put:
+      tags:
+        - Admin
+      summary: Cập nhật user (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                balance:
+                  type: number
+                  format: decimal
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '404':
+          description: Không tìm thấy user
+    delete:
+      tags:
+        - Admin
+      summary: Xóa user (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy user
+
+  /admin/users/{id}/adjust-balance:
+    post:
+      tags:
+        - Admin
+      summary: Điều chỉnh số dư user (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  format: decimal
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Điều chỉnh thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+        '404':
+          description: Không tìm thấy user
+
+  /admin/exams:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả exams (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Exam'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/exams/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Lấy thông tin exam theo ID (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exam'
+        '404':
+          description: Không tìm thấy exam
+    put:
+      tags:
+        - Admin
+      summary: Cập nhật exam (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                des:
+                  type: string
+                is_public:
+                  type: boolean
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '404':
+          description: Không tìm thấy exam
+    delete:
+      tags:
+        - Admin
+      summary: Xóa exam (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy exam
+
+  /admin/exams/{id}/results:
+    get:
+      tags:
+        - Admin
+      summary: Lấy kết quả của exam (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+
+  /admin/classes:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả classes (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  classes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Class'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/classes/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Lấy thông tin class theo ID (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Class'
+        '404':
+          description: Không tìm thấy class
+    delete:
+      tags:
+        - Admin
+      summary: Xóa class (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy class
+
+  /admin/classes/{id}/students:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách học sinh trong class (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  students:
+                    type: array
+
+  /admin/purchases:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả purchases (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  purchases:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/purchases/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Lấy thông tin purchase theo ID (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+        '404':
+          description: Không tìm thấy purchase
+
+  /admin/purchases/{id}/refund:
+    post:
+      tags:
+        - Admin
+      summary: Hoàn tiền cho purchase (SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Hoàn tiền thành công
+        '400':
+          description: Không thể hoàn tiền
+        '404':
+          description: Không tìm thấy purchase
+
+  /admin/transactions:
+    get:
+      tags:
+        - Admin
+      summary: Lấy lịch sử giao dịch (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/reports/revenue:
+    get:
+      tags:
+        - Admin
+      summary: Lấy báo cáo doanh thu (Admin/SuperAdmin only)
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRevenue:
+                    type: number
+                    format: decimal
+                  revenueByMonth:
+                    type: array
+
+  /admin/reports/user-activity:
+    get:
+      tags:
+        - Admin
+      summary: Lấy báo cáo hoạt động người dùng (Admin/SuperAdmin only)
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalLogins:
+                    type: integer
+                  activeUsers:
+                    type: integer
+                  newUsers:
+                    type: integer
+
+  /admin/reports/exam-stats:
+    get:
+      tags:
+        - Admin
+      summary: Lấy báo cáo thống kê đề thi (Admin/SuperAdmin only)
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalExams:
+                    type: integer
+                  totalAttempts:
+                    type: integer
+                  averageScore:
+                    type: number
+                    format: decimal
+
+  /admin/notifications/broadcast:
+    post:
+      tags:
+        - Admin
+      summary: Gửi thông báo broadcast (Admin/SuperAdmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                targetRole:
+                  type: string
+                  enum: [student, teacher, admin, all]
+      responses:
+        '200':
+          description: Gửi thông báo thành công
+        '400':
+          description: Thiếu thông tin
+
+  /admin/notifications/history:
+    get:
+      tags:
+        - Admin
+      summary: Lấy lịch sử thông báo broadcast (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/posts:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả posts (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/posts/{id}/hide:
+    put:
+      tags:
+        - Admin
+      summary: Ẩn bài đăng (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ẩn bài đăng thành công
+        '404':
+          description: Không tìm thấy bài đăng
+
+  /admin/posts/{id}/show:
+    put:
+      tags:
+        - Admin
+      summary: Hiện bài đăng (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hiện bài đăng thành công
+        '404':
+          description: Không tìm thấy bài đăng
+
+  /admin/posts/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Xóa bài đăng (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy bài đăng
+
+  /admin/comments:
+    get:
+      tags:
+        - Admin
+      summary: Lấy danh sách tất cả comments (Admin/SuperAdmin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /admin/comments/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Xóa comment (Admin/SuperAdmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Xóa thành công
+        '404':
+          description: Không tìm thấy comment
+

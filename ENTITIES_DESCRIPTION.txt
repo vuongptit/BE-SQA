@@ -1,0 +1,51 @@
+Mô Tả Các Thực Thể Trong Hệ Thống
+
+Danh Sách Các Thực Thể Theo Mẫu
+
+1. Thực thể Người dùng ⇒ Lớp User: Lớp User dùng để lưu thông tin người dùng trong hệ thống
+
+2. Thực thể Lịch sử đăng nhập ⇒ Lớp Recent_logins: Lớp Recent_logins dùng để lưu trữ lịch sử đăng nhập của người dùng
+
+3. Thực thể Lịch sử giao dịch ⇒ Lớp Transaction_history: Lớp Transaction_history dùng để lưu trữ lịch sử giao dịch trong hệ thống
+
+4. Thực thể Lịch sử nạp tiền ⇒ Lớp Deposit_history: Lớp Deposit_history dùng để lưu trữ lịch sử nạp tiền của người dùng
+
+5. Thực thể Lịch sử rút tiền ⇒ Lớp Withdrawn_history: Lớp Withdrawn_history dùng để lưu trữ lịch sử rút tiền của người dùng
+
+6. Thực thể Thông báo ⇒ Lớp Notifications: Lớp Notifications dùng để lưu trữ thông báo cho người dùng
+
+7. Thực thể Lớp học ⇒ Lớp Classes: Lớp Classes dùng để lưu trữ thông tin các lớp học
+
+8. Thực thể Học sinh trong lớp ⇒ Lớp Class_student: Lớp Class_student dùng để liên kết học sinh với lớp học
+
+9. Thực thể Bài đăng trong lớp ⇒ Lớp Post_classes: Lớp Post_classes dùng để lưu trữ các bài đăng trong lớp học
+
+10. Thực thể Bình luận bài đăng ⇒ Lớp Post_comments: Lớp Post_comments dùng để lưu trữ bình luận trên các bài đăng trong lớp học
+
+11. Thực thể Đề thi ⇒ Lớp Exams: Lớp Exams dùng để lưu trữ thông tin các đề thi
+
+12. Thực thể Đề thi trong lớp ⇒ Lớp Exam_classes: Lớp Exam_classes dùng để liên kết đề thi với lớp học
+
+13. Thực thể Bình luận đề thi ⇒ Lớp Exam_comments: Lớp Exam_comments dùng để lưu trữ bình luận trên đề thi
+
+14. Thực thể Yêu thích đề thi ⇒ Lớp Exam_favorites: Lớp Exam_favorites dùng để lưu trữ các đề thi được đánh dấu yêu thích
+
+15. Thực thể Mua đề thi ⇒ Lớp Exam_purchase: Lớp Exam_purchase dùng để lưu trữ lịch sử mua đề thi
+
+16. Thực thể Đánh giá đề thi ⇒ Lớp Exam_ratings: Lớp Exam_ratings dùng để lưu trữ đánh giá của người dùng về kết quả thi
+
+17. Thực thể Trạng thái làm bài ⇒ Lớp Student_exam_status: Lớp Student_exam_status dùng để theo dõi trạng thái và kết quả làm bài của học sinh
+
+18. Thực thể Phiên làm bài ⇒ Lớp Exam_sessions: Lớp Exam_sessions dùng để lưu trữ các phiên làm bài thi
+
+19. Thực thể Nhật ký gian lận ⇒ Lớp Exam_cheating_logs: Lớp Exam_cheating_logs dùng để lưu trữ log các hành vi gian lận trong quá trình thi
+
+20. Thực thể Kết quả thi ⇒ Lớp Exam_results: Lớp Exam_results dùng để lưu trữ kết quả thi của học sinh
+
+21. Thực thể Câu hỏi ⇒ Lớp Questions: Lớp Questions dùng để lưu trữ các câu hỏi trong đề thi
+
+22. Thực thể Đáp án câu hỏi ⇒ Lớp Question_answers: Lớp Question_answers dùng để lưu trữ các đáp án của câu hỏi
+
+23. Thực thể Câu trả lời học sinh ⇒ Lớp Student_answers: Lớp Student_answers dùng để lưu trữ câu trả lời của học sinh trong phiên thi
+
+
